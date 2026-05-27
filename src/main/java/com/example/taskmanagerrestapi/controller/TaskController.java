@@ -39,36 +39,40 @@ public class TaskController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get task by ID")
-    public ResponseEntity<TaskResponse> getTask(@PathVariable Long id,
-                                                 @AuthenticationPrincipal User user) {
+    public ResponseEntity<TaskResponse> getTask(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user) {
         return ResponseEntity.ok(taskService.getTask(id, user));
     }
 
     @PostMapping
     @Operation(summary = "Create task")
-    public ResponseEntity<TaskResponse> createTask(@Valid @RequestBody TaskRequest request,
-                                                    @AuthenticationPrincipal User user) {
+    public ResponseEntity<TaskResponse> createTask(
+            @Valid @RequestBody TaskRequest request,
+            @AuthenticationPrincipal User user) {
         return ResponseEntity.status(HttpStatus.CREATED).body(taskService.createTask(request, user));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update task")
-    public ResponseEntity<TaskResponse> updateTask(@PathVariable Long id,
-                                                    @Valid @RequestBody TaskRequest request,
-                                                    @AuthenticationPrincipal User user) {
+    public ResponseEntity<TaskResponse> updateTask(
+            @PathVariable Long id,
+            @Valid @RequestBody TaskRequest request,
+            @AuthenticationPrincipal User user) {
         return ResponseEntity.ok(taskService.updateTask(id, request, user));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete task")
-    public ResponseEntity<Void> deleteTask(@PathVariable Long id,
-                                            @AuthenticationPrincipal User user) {
+    public ResponseEntity<Void> deleteTask(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user) {
         taskService.deleteTask(id, user);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/stats")
-    @Operation(summary = "Get task statistics", description = "Count tasks by status")
+    @Operation(summary = "Get task statistics", description = "Count of tasks per status")
     public ResponseEntity<Map<String, Long>> getStats(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(taskService.getStats(user));
     }

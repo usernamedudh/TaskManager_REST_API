@@ -1,14 +1,12 @@
 package com.example.taskmanagerrestapi.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
 
-@Data
-public class AuthRequest {
+public record AuthRequest(
 
-    @NotBlank(message = "Username is required")
-    private String username;
+        @NotBlank(message = "Username is required")
+        String username,
 
-    @NotBlank(message = "Password is required")
-    private String password;
-}
+        @NotBlank(message = "Password is required")
+        String password
+) {}

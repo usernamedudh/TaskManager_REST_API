@@ -3,7 +3,6 @@ package com.example.taskmanagerrestapi.service;
 import com.example.taskmanagerrestapi.dto.TaskRequest;
 import com.example.taskmanagerrestapi.dto.TaskResponse;
 import com.example.taskmanagerrestapi.entity.Task;
-import com.example.taskmanagerrestapi.entity.TaskPriority;
 import com.example.taskmanagerrestapi.entity.TaskStatus;
 import com.example.taskmanagerrestapi.entity.User;
 import com.example.taskmanagerrestapi.exception.ResourceNotFoundException;
@@ -20,30 +19,31 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class TaskService {
 
     private final TaskRepository taskRepository;
 
     public Page<TaskResponse> getTasks(User user, TaskStatus status, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Task> tasks = status != null
+        Page<Task> tasks = (status != null)
                 ? taskRepository.findByUserAndStatus(user, status, pageable)
                 : taskRepository.findByUser(user, pageable);
         return tasks.map(TaskResponse::from);
     }
 
     public TaskResponse getTask(Long id, User user) {
-        Task task = taskRepository.findByIdAndUser(id, user)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + id));
+        Task task = findByIdAndUser(id, user);
         return TaskResponse.from(task);
     }
 
+    @Transactional
     public TaskResponse createTask(TaskRequest request, User user) {
         Task task = Task.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
-                .status(request.getStatus() != null ? request.getStatus() : TaskStatus.TODO)
-                .priority(request.getPriority() != null ? request.getPriority() : TaskPriority.MEDIUM)
+                .status(request.getStatus())
+                .priority(request.getPriority())
                 .dueDate(request.getDueDate())
                 .user(user)
                 .build();
@@ -52,8 +52,7 @@ public class TaskService {
 
     @Transactional
     public TaskResponse updateTask(Long id, TaskRequest request, User user) {
-        Task task = taskRepository.findByIdAndUser(id, user)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + id));
+        Task task = findByIdAndUser(id, user);
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());
         if (request.getStatus() != null) task.setStatus(request.getStatus());
@@ -62,17 +61,24 @@ public class TaskService {
         return TaskResponse.from(taskRepository.save(task));
     }
 
+    @Transactional
     public void deleteTask(Long id, User user) {
-        Task task = taskRepository.findByIdAndUser(id, user)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + id));
+        Task task = findByIdAndUser(id, user);
         taskRepository.delete(task);
     }
 
     public Map<String, Long> getStats(User user) {
         return Map.of(
-                "todo", taskRepository.countByUserAndStatus(user, TaskStatus.TODO),
+                "todo",       taskRepository.countByUserAndStatus(user, TaskStatus.TODO),
                 "inProgress", taskRepository.countByUserAndStatus(user, TaskStatus.IN_PROGRESS),
-                "done", taskRepository.countByUserAndStatus(user, TaskStatus.DONE)
+                "done",       taskRepository.countByUserAndStatus(user, TaskStatus.DONE)
         );
+    }
+
+    // ---- helpers ----
+
+    private Task findByIdAndUser(Long id, User user) {
+        return taskRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + id));
     }
 }
